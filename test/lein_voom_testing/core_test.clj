@@ -1,7 +1,42 @@
 (ns lein-voom-testing.core-test
   (:require [clojure.test :refer :all]
-            [lein-voom-testing.core :refer :all]))
+            [clojure.test.check :as tc]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.properties :as prop]
+            [clojure.test.check.generators :as gen]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(defn select-item
+  [coll selector]
+  (when-not (zero? (count coll))
+    (nth coll (mod selector (count coll)))))
+
+(def new-project-repo-gen (gen/tuple (gen/return :new-project-repo) gen/string-alphanumeric))
+(defn new-project-repo
+  [state name]
+  (-> state
+      (assoc-in [:state name] {})
+      (update-in [:actions] conj [:new-project-repo name])))
+
+(def new-agent-gen (gen/tuple (gen/return :new-agent) gen/string-alphanumeric gen/nat))
+(defn new-agent
+  [state name repo-select]
+  (let [repos (keys (:state state))
+        repo (select-item repos repo-select)]
+    (if repo
+      (-> state
+          (assoc-in [:state repo] {name :details})
+          (update-in [:actions] conj [:new-agent name repo]))
+      state)))
+
+(defn apply-actions
+  [state [action & args]]
+  (case action
+    :new-project-repo (apply new-project-repo state args)
+    :new-agent (apply new-agent state args)))
+
+(defn do-run [n]
+  (map #(reduce apply-actions {:state {} :actions []} %)
+       (gen/sample (gen/vector
+                    (gen/frequency [[10 new-project-repo-gen]
+                                    [90 new-agent-gen]]))
+                   n)))
