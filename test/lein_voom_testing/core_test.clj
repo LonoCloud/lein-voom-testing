@@ -26,6 +26,7 @@
       (-> state
           (assoc-in [:state repo] {name :details})
           (update-in [:actions] conj [:new-agent name repo]))
+      ;; NOOP because there is no repo
       state)))
 
 (defn apply-actions
@@ -35,6 +36,9 @@
     :new-agent (apply new-agent state args)))
 
 (defn do-run [n]
+  ;; I could seed with an initial repo but I specifically want to show
+  ;; how the new-agent can be NOOPed when there there is no repo yet
+  ;; -- this will come in to play more with other generators.
   (map #(reduce apply-actions {:state {} :actions []} %)
        (gen/sample (gen/vector
                     (gen/frequency [[10 new-project-repo-gen]
