@@ -10,37 +10,64 @@
   (when-not (zero? (count coll))
     (nth coll (mod selector (count coll)))))
 
-(def new-project-repo-gen (gen/tuple (gen/return :new-project-repo) gen/string-alphanumeric))
-(defn new-project-repo
-  [state name]
-  (-> state
-      (assoc-in [:state name] {})
-      (update-in [:actions] conj [:new-project-repo name])))
+;; Multimethod definitions
 
-(def new-agent-gen (gen/tuple (gen/return :new-agent) gen/string-alphanumeric gen/nat))
-(defn new-agent
-  [state name repo-select]
-  (let [repos (keys (:state state))
-        repo (select-item repos repo-select)]
-    (if repo
-      (-> state
-          (assoc-in [:state repo] {name :details})
-          (update-in [:actions] conj [:new-agent name repo]))
+(defmulti action-generator
+  "Returns a generator of un-resolved actions."
+  identity)
+
+(defn action-fn
+  [run [action & args]]
+  action)
+
+(defmulti resolve-action
+  "Resolves an un-resolved action against an accumulated state."
+  #'action-fn)
+
+(defmulti do-action
+  "Applies the side-effects of a resolved action."
+  #'action-fn)
+
+(defmethod do-action :default [& args]
+  (prn "Unimplemented" args))
+
+;; :new-project-repo
+
+(defmethod action-generator :new-project-repo [_]
+  (gen/tuple (gen/return :new-project-repo)))
+
+(defmethod resolve-action :new-project-repo
+  [run [action]]
+  (let [n (count (::state run))
+        repo-name (str "repo-" n)]
+    (-> run
+        (assoc-in [::state repo-name] {})
+        (update-in [::actions] conj [:new-project-repo repo-name]))))
+
+;; :new-agent
+
+(defmethod action-generator :new-agent [_]
+  (gen/tuple (gen/return :new-agent) gen/nat))
+
+(defmethod resolve-action :new-agent
+  [run [action repo-select]]
+  (let [repos (keys (::state run))]
+    (if (empty? repos)
       ;; NOOP because there is no repo
-      state)))
-
-(defn apply-actions
-  [state [action & args]]
-  (case action
-    :new-project-repo (apply new-project-repo state args)
-    :new-agent (apply new-agent state args)))
+      (update-in run [::actions] conj [::noop])
+      (let [repo (select-item repos repo-select)
+            agents (-> run ::state (get repo))
+            agent-name (str repo "-agent-" (count agents))]
+        (-> run
+            (update-in [::state repo] conj [agent-name ::details])
+            (update-in [::actions] conj [:new-agent agent-name repo]))))))
 
 (defn do-run [n]
-  ;; I could seed with an initial repo but I specifically want to show
-  ;; how the new-agent can be NOOPed when there there is no repo yet
-  ;; -- this will come in to play more with other generators.
-  (map #(reduce apply-actions {:state {} :actions []} %)
+  (map #(reduce resolve-action
+                {::state {"repo-0" {}}
+                 ::actions [[:new-project-repo "repo-0"]]}
+                %)
        (gen/sample (gen/vector
-                    (gen/frequency [[10 new-project-repo-gen]
-                                    [90 new-agent-gen]]))
+                    (gen/frequency [[ 5 (action-generator :new-project-repo)]
+                                    [95 (action-generator :new-agent)]]))
                    n)))
