@@ -74,7 +74,8 @@
 ;; :new-project-repo
 
 (defmethod action-generator :new-project-repo [_]
-  (gen/tuple (gen/return :new-project-repo)))
+  (gen/tuple
+   (gen/tuple (gen/return :new-project-repo))))
 
 (defmethod resolve-action :new-project-repo
   [run [action]]
@@ -87,7 +88,8 @@
 ;; :new-agent
 
 (defmethod action-generator :new-agent [_]
-  (gen/tuple (gen/return :new-agent) gen/nat))
+  (gen/tuple
+   (gen/tuple (gen/return :new-agent) gen/nat)))
 
 (defmethod resolve-action :new-agent
   [run [action repo-select]]
@@ -107,7 +109,8 @@
                 {::state {"repo-0" {}}
                  ::actions [[:new-project-repo "repo-0"]]}
                 %)
-       (gen/sample (gen/vector
-                    (gen/frequency [[ 5 (action-generator :new-project-repo)]
-                                    [95 (action-generator :new-agent)]]))
-                   n)))
+       (apply concat
+              (gen/sample (gen/vector
+                           (gen/frequency [[ 5 (action-generator :new-project-repo)]
+                                           [95 (action-generator :new-agent)]]))
+                          n))))
