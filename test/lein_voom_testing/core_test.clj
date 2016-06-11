@@ -1,9 +1,49 @@
 (ns lein-voom-testing.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.spec :as spec]
+            [clojure.test :refer :all]
             [clojure.test.check :as tc]
             [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [clojure.test.check.generators :as gen]))
+            [datascript.core :as ds]))
+
+;; Hm. This wants to be datascript.
+"
+- test-run
+  - state
+     * projects - derived?
+       - name
+       - repo-source
+       - repo-path
+     * repo
+        * source
+           * ref
+             - refname
+             - tip-commit
+             - ancestry dag
+        * agent
+           * ref
+             - refname
+             - tip-commit
+             - ancestry dag
+     - commits
+        * parents
+        - commit/author time
+        * path
+           - project name
+           - project version
+           - project deps
+           - source file
+  - actions []
+"
+
+(spec/def ::test-run (spec/keys :req [::state ::actions]))
+(spec/def ::state map?)
+(spec/def ::action #(and (vector? %) (keyword? (first %))))
+(spec/def ::new-project-repo-action (spec/cat :action #{:new-project-repo}))
+(spec/def ::new-agent-action (spec/cat :action #{:new-agent}
+                                       :repo-selector long?))
+(spec/def ::actions (spec/coll-of ::action []))
 
 (defn select-item
   [coll selector]
