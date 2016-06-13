@@ -7,34 +7,8 @@
             [clojure.test.check.properties :as prop]
             [datascript.core :as ds]))
 
-;; Hm. This wants to be datascript.
 "
-- test-run
-  - state
-     * projects - derived?
-       - name
-       - repo-source
-       - repo-path
-     * repo
-        * source
-           * ref
-             - refname
-             - tip-commit
-             - ancestry dag
-        * agent
-           * ref
-             - refname
-             - tip-commit
-             - ancestry dag
-     - commits
-        * parents
-        - commit/author time
-        * path
-           - project name
-           - project version
-           - project deps
-           - source file
-  - actions []
+
 "
 
 (spec/def ::test-run (spec/keys :req [::state ::actions]))
