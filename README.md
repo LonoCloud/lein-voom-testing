@@ -84,6 +84,17 @@ Hm. This wants to be datascript.
 - .../.m2
 - WC directories
 
+## Consider commit times:
+- real wall clock
+- instantaneous - monotonic
+- random - monotonic
+- second - monotonic
+- day - monotonic
+- year - monotonic
+- sometimes retrograde
+- totally random
+-- also same vs. different GIT_AUTHOR_DATE & GIT_COMMITTER_DATE
+
 
 ## License
 
