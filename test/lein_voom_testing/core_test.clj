@@ -8,6 +8,23 @@
             [clojure.test.check.properties :as prop]
             [datascript.core :as ds]))
 
+;; NOTE: This is an in-progress sketch.
+
+;; TODO: Make parameterizable
+(def workspace "workspace")
+
+(def workspace-structure
+  [:run ["snapshots" [:snapshot]
+         "main" ["maven"
+                 "git-repos" [:git-repo]
+                 "authors" [:author]]]])
+
+(def workspace-structure
+  {:run {"snapshots" :snapshot
+         "main" {"maven" nil
+                 "git-repos" :git-repo
+                 "authors" :author}}})
+
 (def actions
   ;; global actions
   [[:new-project-repo] #_repo
@@ -202,6 +219,8 @@
 ;;  - resolved actions shouldn't need global context to apply
 ;;  - testing actions, however, need state-up-to-now to validate
 
+;; TODO: Snapshots are most efficient if hardlinked (make sure to be hard-link friendly -- is Maven?)
+
 "
 Each generation:
 [[:raw-action ...] [:raw-action ...]...]
@@ -211,4 +230,19 @@ Each generation:
 * take 
 
 
+Where does stuff go?
+- :workspace (permanent, .gitignore'd)
+  - :run <per-run-directory>
+    - :snapshots directory
+      - snapshot
+    - :main
+      - :maven repo directory
+      - :hub-o-git repos directory
+        - git repo
+      - :authors directory
+        - author
+
+
 "
+
+nil
