@@ -31,16 +31,17 @@
    [:git-pull-merge-modify ::author ::project]
    [:freshen-project ::author ::project]])
 
-(spec/def ::repo (spec/spec #() :gen (gen/tuple (gen/return :repo) pos-long?)))
+
+(spec/def ::repo (spec/cat :action #{:repo} :repo-num nat-int?))
 
 (spec/def ::new-project-repo-action (spec/cat :action #{:new-project-repo}))
 (spec/def ::new-agent-action (spec/cat :action #{:new-agent}
-                                       :repo-selector (::repo))
+                                       :repo-selector ::repo))
 
-  (spec/def ::action (spec/alt :new-agent ::new-agent-action
-                               :new-project-repo ::new-project-repo-action)))
+(spec/def ::action (spec/alt :new-agent ::new-agent-action
+                             :new-project-repo ::new-project-repo-action))
 
-(spec/def ::actions (spec/coll-of ::action []))
+(spec/def ::actions (spec/coll-of ::action :action []))
 
 (spec/def ::state map?)
 
